@@ -82,6 +82,9 @@ button.go{box-shadow:inset -3px -3px 0 rgba(0,0,0,.25),inset 3px 3px 0 rgba(255,
 .pn{box-shadow:inset 0 0 0 2px #120d17,0 3px 0 #0e0a12}
 .sl{box-shadow:inset 0 0 0 2px rgba(0,0,0,.45)}
 @media (prefers-reduced-motion:reduce){.sprite,.tg,.torch .fl{animation:none}}
+.tip{position:relative;cursor:help;border-bottom:2px dotted var(--em);outline:none}
+.tip::after{content:attr(data-tip);position:absolute;left:0;bottom:calc(100% + 8px);width:240px;background:#0f0b13;color:var(--tx);border:2px solid var(--em);padding:8px 10px;font-size:14px;line-height:1.45;font-weight:400;text-align:left;white-space:normal;z-index:30;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .12s}
+.tip:hover::after,.tip:focus::after{opacity:1;visibility:visible}
 </style>
 </head>
 <body>
@@ -741,6 +744,15 @@ function baseTrainGain(statKey) {
   return statKey === 'hp' ? 15 : 3;
 }
 
+function tip(k) {
+  var s = stats(), d = {
+    str: '공격력이에요. 높을수록 몬스터에게 큰 피해를 줘요. (기본 공격 +4 포함, 현재 ' + (s.str + 4) + ')',
+    hp: '버틸 수 있는 양이에요. 0이 되면 패배해요. 물약은 최대 체력의 40%를 회복해요. (현재 ' + s.hp + ')',
+    agi: '몬스터의 공격을 피할 확률이에요. 점수 1당 0.2%, 최대 45%예요. (현재 ' + Math.min(45, s.agi * 0.2).toFixed(1) + '%)',
+    int: '치명타가 터질 확률이에요. 점수 1당 1.2%, 최대 60%예요. 치명타는 피해가 2배! (현재 ' + Math.min(60, s.int * 1.2).toFixed(1) + '%)'
+  }[k];
+  return '<span class="tip" tabindex="0" data-tip="' + esc(d) + '">' + SN[k] + '</span>';
+}
 function stats() {
   normProfile(me);
   var s = {
@@ -904,7 +916,7 @@ function home(note) {
     if (r == null) return '<div class="sl e"><div class="sl-top"><div class="ic"></div><div><div class="nm">' + x[1] + '</div><div class="sb">' + x[2] + ' · 비어 있음</div></div></div></div>';
     var bon = slotBonus(k, st, r), maxed = lv >= MAX_ENH;
     return '<div class="sl" style="border-color:' + M[r] + '">' +
-      '<div class="sl-top">' + icon(k, r) + '<div><div class="nm" style="color:' + M[r] + '">' + R[r] + ' ' + x[1] + (lv > 0 ? ' <span style="color:#ff9a3c">+' + lv + '</span>' : '') + '</div><div class="sb">' + x[2] + ' · ' + SN[st] + ' +' + bon + '</div></div></div>' +
+      '<div class="sl-top">' + icon(k, r) + '<div><div class="nm" style="color:' + M[r] + '">' + R[r] + ' ' + x[1] + (lv > 0 ? ' <span style="color:#ff9a3c">+' + lv + '</span>' : '') + '</div><div class="sb">' + x[2] + ' · ' + tip(st) + ' +' + bon + '</div></div></div>' +
       '<div class="sl-bot"><span class="sb">' + (maxed ? '최대 강화(+9)' : '재료 ' + cost + '개 · 성공 ' + rate + '%') + '</span>' +
       (maxed ? '<button type="button" class="sm" disabled>완료</button>' : '<button type="button" class="sm btn-enh" data-k="' + k + '"' + (me.shards < cost ? ' disabled' : '') + '>강화</button>') +
       '</div></div>';
@@ -912,7 +924,7 @@ function home(note) {
 
   var bars = ['str', 'hp', 'agi', 'int'].map(function (k) {
     var bVal = clampStat(me.baseStat[k]), tCost = baseTrainCost(k), tGain = baseTrainGain(k), isFull = bVal >= MAX_STAT;
-    return '<div style="margin-top:8px">' + SN[k] + ' <span class="mu">(기본 ' + bVal + ' / ' + MAX_STAT + ')</span><b style="float:right">' + s[k] + '</b></div>' +
+    return '<div style="margin-top:8px">' + tip(k) + ' <span class="mu">(기본 ' + bVal + ' / ' + MAX_STAT + ')</span><b style="float:right">' + s[k] + '</b></div>' +
       '<div class="bar"><i style="width:' + Math.min(100, Math.max(4, Math.log10(s[k] + 10) / Math.log10(MAX_STAT + 10) * 100)) + '%;background:' + col[k] + '"></i></div>' +
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
       '<span class="sb">기본 +' + tGain + ' (재료 ' + tCost + '개)</span>' +
@@ -973,7 +985,7 @@ function pickPart() {
     SL.map(function (x, i) {
       var r = me.gear[x[0]], lv = me.enh[x[0]] || 0;
       return '<button class="slot' + (r == null ? ' e' : '') + '" data-i="' + i + '" style="' + (r != null ? 'border-color:' + M[r] : '') + '">' +
-        x[1] + ' · ' + x[2] + (lv > 0 ? ' +' + lv : '') + '<div class="mu">' + (r == null ? '비어 있음' : '지금 ' + R[r]) + ' · ' + SN[x[3]] + '</div></button>';
+        x[1] + ' · ' + x[2] + (lv > 0 ? ' +' + lv : '') + '<div class="mu">' + (r == null ? '비어 있음' : '지금 ' + R[r]) + ' · ' + tip(x[3]) + '</div></button>';
     }).join('') + '</div></div>';
   document.getElementById('bk').onclick = function () { home(); };
   [].forEach.call(document.querySelectorAll('.slot'), function (b) { b.onclick = function () { exam(+b.dataset.i); }; });
@@ -1074,7 +1086,7 @@ function open(si, n, bonus) {
         if (fx.s) { app.classList.add('ss'); setTimeout(function () { app.classList.remove('ss'); }, 650); }
         setTimeout(function () {
           var c = document.createElement('div'); c.className = 'pn rc'; c.style.cssText = 'border:3px solid ' + M[r] + ';margin-bottom:0';
-          c.innerHTML = '<div style="color:' + M[r] + ';font-size:26px">' + R[r] + ' ' + sl[1] + '</div><div>' + SN[sl[3]] + ' +' + val + '</div><div class="mu">' + (up ? '장착했어요! 아바타가 바뀌었어요.' : '이미 더 좋은 장비가 있어서 <b style="color:#7db3ff">재료 +' + gotShards + '개</b>로 분해했어요!') + '</div>';
+          c.innerHTML = '<div style="color:' + M[r] + ';font-size:26px">' + R[r] + ' ' + sl[1] + '</div><div>' + tip(sl[3]) + ' +' + val + '</div><div class="mu">' + (up ? '장착했어요! 아바타가 바뀌었어요.' : '이미 더 좋은 장비가 있어서 <b style="color:#7db3ff">재료 +' + gotShards + '개</b>로 분해했어요!') + '</div>';
           w.appendChild(c);
           var q = document.getElementById('py'); if (q) q.textContent = 10 - me.pity[0];
           var sc = document.getElementById('shc'); if (sc) sc.textContent = me.shards + '개';
@@ -1093,7 +1105,7 @@ function tower() {
   var H = 30 + 10 * f + Math.pow(Math.max(0, f - 15), 1.65) * 4;
   var A = 3 + 1.2 * f + Math.pow(Math.max(0, f - 15), 1.55) * 1.1;
   var room = buildFloorMobs(f, H, A), mobs = room.list;
-  var hp = s.hp, maxHp = s.hp, dodge = Math.min(.45, s.agi * .002), atk = s.str + s.int * .6, rounds = 0, heroTurn = true, fast = false, done = false;
+  var hp = s.hp, maxHp = s.hp, dodge = Math.min(.45, s.agi * .002), atk = s.str + 4, critP = Math.min(.6, s.int * .012), rounds = 0, heroTurn = true, fast = false, done = false;
   var dropPotions = 0, dropShards = 0;
   var weak = SL.slice().sort(function (a, b) { return (me.gear[a[0]] == null ? -1 : me.gear[a[0]]) - (me.gear[b[0]] == null ? -1 : me.gear[b[0]]); })[0];
 
@@ -1169,7 +1181,7 @@ function tower() {
     var bend = document.getElementById('bend');
     if (bend) {
       bend.innerHTML = '<p class="mu">' + rounds + '라운드 · 남은 체력 ' + Math.max(0, Math.round(hp)) + ' / ' + maxHp + lootTxt + '</p>' +
-        (win ? '' : '<p>힘 ' + s.str + ' 체력 ' + s.hp + ' 민첩 ' + s.agi + ' 지능 ' + s.int + ' · 보유 재료 ' + me.shards + '개 — 가장 약한 칸은 <b style="color:#ff9a3c">' + weak[1] + ' (' + weak[2] + ')</b>이에요.</p>') +
+        (win ? '' : '<p>' + tip('str') + ' ' + s.str + ' ' + tip('hp') + ' ' + s.hp + ' ' + tip('agi') + ' ' + s.agi + ' ' + tip('int') + ' ' + s.int + ' · 보유 재료 ' + me.shards + '개 — 가장 약한 칸은 <b style="color:#ff9a3c">' + weak[1] + ' (' + weak[2] + ')</b>이에요.</p>') +
         '<div class="row"><button class="go" id="bk2">대장간으로</button>' + (win ? '<button id="nx">다음 층 도전 (' + (f + 1) + '층)</button>' : '') + '</div>';
       document.getElementById('bk2').onclick = function () { home(); };
       if (win) document.getElementById('nx').onclick = tower;
@@ -1186,9 +1198,9 @@ function tower() {
     var delay = fast ? 35 : 420;
     if (heroTurn) {
       rounds++;
-      var t = alive[0], dmg = Math.max(1, Math.round(atk * (.85 + Math.random() * .3)));
+      var t = alive[0], crit = Math.random() < critP, dmg = Math.max(1, Math.round(atk * (.85 + Math.random() * .3) * (crit ? 2 : 1)));
       t.h -= dmg; hitAnim('u-mob-' + t.id);
-      log('[' + rounds + 'R] ' + esc(me.nick) + ' → ' + esc(t.n) + '에게 <b>' + dmg + '</b> 피해' + (t.h <= 0 ? ' (' + esc(t.n) + ' 처치!)' : ''));
+      log('[' + rounds + 'R] ' + esc(me.nick) + ' → ' + esc(t.n) + '에게 <b>' + dmg + '</b> 피해' + (crit ? ' <b style="color:#ffb347">치명타!</b>' : '') + (t.h <= 0 ? ' (' + esc(t.n) + ' 처치!)' : ''));
       if (t.h <= 0) onMobKilled(t);
       syncHp();
       if (mobs.every(function (m) { return m.h <= 0; })) { btTimer = setTimeout(function () { finish(true); }, delay); return; }
