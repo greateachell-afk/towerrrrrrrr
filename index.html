@@ -1513,7 +1513,7 @@ if (initialUser) {
    MASTER 관리자 모드 (Firebase Spark 무료 요금제)
    권한은 화면 표시가 아니라 Realtime Database 규칙에서 반드시 검증됩니다.
    ========================================================================= */
-const MASTER_UID = 'QkQANGyycwfuswkM5wcqsjJIvyC';
+const MASTER_UID = 'QkQANGyycwfuswkM5wcqsjJIvyC2';
 let masterPanelOpen = false;
 function masterEscape(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function masterClose() { const el=document.getElementById('master-admin-overlay'); if(el) el.remove(); masterPanelOpen=false; }
